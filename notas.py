@@ -5,9 +5,35 @@ import os
 st.set_page_config(page_title="Notas por Encontro", layout="centered")
 st.title("📚 Lançamento de Notas Convertidas por Encontro")
 
-# Entrada de nomes dos alunos
-st.subheader("👨‍🎓 Alunos")
-alunos = st.text_area("Digite os nomes dos alunos (um por linha)").splitlines()
+# Upload do arquivo com nomes
+st.subheader("📁 Envie o arquivo com os nomes dos participantes")
+uploaded_file = st.file_uploader("Arquivo Excel ou CSV", type=["xlsx", "csv"])
+
+alunos = []
+
+if uploaded_file:
+    # Leitura do arquivo
+    if uploaded_file.name.endswith(".csv"):
+        df_nomes = pd.read_csv(uploaded_file)
+    else:
+        df_nomes = pd.read_excel(uploaded_file)
+
+    # Tenta identificar colunas de nome e sobrenome
+    colunas_possiveis = df_nomes.columns.str.lower()
+    if "nome" in colunas_possiveis and "sobrenome" in colunas_possiveis:
+        alunos = df_nomes["Nome"] + " " + df_nomes["Sobrenome"]
+    elif "nome completo" in colunas_possiveis:
+        alunos = df_nomes["Nome Completo"]
+    else:
+        alunos = df_nomes.iloc[:, 0]  # Usa a primeira coluna como fallback
+
+    alunos = alunos.dropna().astype(str).tolist()
+    st.success(f"✅ {len(alunos)} nomes carregados com sucesso!")
+
+# Se não houver upload, mostra campo manual
+if not alunos:
+    st.subheader("👨‍🎓 Ou digite os nomes manualmente")
+    alunos = st.text_area("Digite os nomes dos alunos (um por linha)").splitlines()
 
 # Número de encontros
 st.subheader("📅 Configuração de Encontros")
